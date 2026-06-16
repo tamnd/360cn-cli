@@ -1,4 +1,4 @@
-package 360cn
+package cn360
 
 import (
 	"context"
@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-func TestGet(t *testing.T) {
+func TestClientGet(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Header.Get("User-Agent") == "" {
 			t.Error("request carried no User-Agent")
@@ -17,8 +17,9 @@ func TestGet(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	c := NewClient()
-	c.Rate = 0 // no pacing in the test
+	cfg := DefaultConfig()
+	cfg.Rate = 0
+	c := NewClientWithConfig(cfg)
 
 	body, err := c.Get(context.Background(), srv.URL)
 	if err != nil {
@@ -29,7 +30,7 @@ func TestGet(t *testing.T) {
 	}
 }
 
-func TestGetRetriesOn503(t *testing.T) {
+func TestClientRetriesOn503(t *testing.T) {
 	var hits int
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		hits++
@@ -41,9 +42,10 @@ func TestGetRetriesOn503(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	c := NewClient()
-	c.Rate = 0
-	c.Retries = 5
+	cfg := DefaultConfig()
+	cfg.Rate = 0
+	cfg.Retries = 5
+	c := NewClientWithConfig(cfg)
 
 	start := time.Now()
 	body, err := c.Get(context.Background(), srv.URL)
